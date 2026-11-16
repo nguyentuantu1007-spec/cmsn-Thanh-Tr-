@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chúc mừng sinh nhật Phạm Thanh Trà 18/11</title>
+<style>
+:root{--bg:#06020a;--fg:#fff;--glow:#ff5ccd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#06020a;--fg:#fff}}
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+#cv{position:fixed;inset:0;z-index:1}
+.ui{position:fixed;left:0;right:0;z-index:5;text-align:center;pointer-events:none;padding:0 16px}
+#head{top:calc(env(safe-area-inset-top,0px) + 18px)}
+#head small{display:block;font-size:12px;letter-spacing:5px;text-transform:uppercase;opacity:.7;text-shadow:0 0 14px var(--glow)}
+#head h1{font-weight:300;font-size:clamp(22px,4.6vw,44px);letter-spacing:3px;margin-top:6px;text-shadow:0 0 24px var(--glow),0 0 48px var(--glow)}
+#head h1 b{font-weight:600}
+#wish{bottom:calc(env(safe-area-inset-bottom,0px) + 86px);display:flex;justify-content:center}
+#card{max-width:min(720px,88vw);padding:16px 22px;border-radius:18px;background:rgba(0,0,0,.32);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--glow);box-shadow:0 0 30px -6px var(--glow);opacity:0;transform:translateY(14px);transition:opacity .9s ease,transform .9s cubic-bezier(.16,1,.3,1)}
+#card.show{opacity:1;transform:none}
+#card i{display:block;font-style:normal;font-size:11px;letter-spacing:3px;text-transform:uppercase;opacity:.65;margin-bottom:8px;color:var(--glow)}
+#card p{font-size:clamp(15px,2.5vw,22px);line-height:1.6;text-shadow:0 0 16px var(--glow)}
+#foot{bottom:calc(env(safe-area-inset-bottom,0px) + 18px);pointer-events:auto}
+button{font:inherit;color:var(--fg);background:rgba(255,255,255,.08);border:1px solid var(--glow);border-radius:999px;padding:9px 22px;font-size:13px;letter-spacing:2px;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 0 18px -4px var(--glow)}
+#foot span{display:block;margin-top:9px;font-size:11px;letter-spacing:1.5px;opacity:.5;text-transform:uppercase}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="ui" id="head"><small>Happy Birthday · 18 / 11</small><h1>Phạm <b>Thanh Trà</b> 🎂</h1></div>
+<div class="ui" id="wish"><div id="card"><i id="tn"></i><p id="wt"></p></div></div>
+<div class="ui" id="foot"><button id="btn">✨ Đổi sắc màu · nhận lời chúc</button><span>Space / chạm đúp · giữ chuột: lốc hồ điệp · R: ngưng đọng</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ---------- Bảng màu (mỗi lần đổi màu = 1 lời chúc mới) ----------
+const mk=(n,p,s,a,c,b)=>({name:n,primary:new THREE.Color(p),secondary:new THREE.Color(s),accent:new THREE.Color(a),core:new THREE.Color(c),bg:new THREE.Color(b)});
+const THEMES=[
+ mk("Mộng điệp lưu ly • Sakura Amethyst",0xff5ccd,0x8c2eff,0xffd6f6,0xe040fb,0x06020a),
+ mk("Lam điệp huyền thoại • Morpho Cyan",0x00e5ff,0x2952ff,0xb8ffff,0x00b8ff,0x02040a),
+ mk("Thiên điệp hoàng kim • Celestial Gold",0xffc83b,0xff5722,0xffffff,0xffaa00,0x080501),
+ mk("Huyết điệp phượng hoàng • Ruby Phoenix",0xff1e56,0xff9a00,0xfff1b0,0xff0044,0x090204),
+ mk("Linh điệp rừng thiêng • Emerald Fairy",0x00ff88,0x00a896,0xe0ff99,0x00e676,0x010805)
+];
+const WISHES=[
+ "Chúc mừng sinh nhật tuổi 14, Phạm Thanh Trà! Mong tuổi mới của Trà nhẹ nhàng và rực rỡ như đàn bướm ánh sáng này.",
+ "Chúc Trà luôn có nụ cười thật tươi, vì nụ cười ấy làm ngày của mọi người sáng hơn.",
+ "Chúc những phím đàn piano của Trà luôn ngân lên thật nhiều giai điệu đẹp.",
+ "Chúc những bức tranh của Trà luôn tràn đầy màu sắc, rực rỡ như bầu trời sao này.",
+ "Chúc Trà học giỏi, tự tin và dám theo đuổi mọi ước mơ của mình.",
+ "Chúc tuổi 14 của Trà có thật nhiều kỷ niệm đẹp, bạn tốt và những điều bất ngờ dễ thương.",
+ "Mong mỗi vì sao băng trên bầu trời này đều mang đến cho Trà một điều ước thành thật.",
+ "Chúc Trà luôn khỏe mạnh, bình yên và được yêu thương thật nhiều.",
+ "Dù đi đâu, làm gì, mong Trà luôn giữ trái tim ấm áp và trong sáng như hôm nay.",
+ "Sinh nhật vui vẻ nhé Trà! 18/11 là ngày của riêng Trà, hãy cười thật nhiều nhé."
+];
+let themeIdx=0,wishIdx=0;
+const act={};['primary','secondary','accent','core','bg'].forEach(k=>act[k]=THEMES[0][k].clone());
+
+// ---------- Scene ----------
+const cv=document.getElementById('cv');
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene(); scene.background=act.bg;
+const camera=new THREE.PerspectiveCamera(52,1,0.1,3000);
+function fit(){
+  const w=innerWidth,h=innerHeight,asp=w/h;
+  renderer.setSize(w,h); camera.aspect=asp; camera.updateProjectionMatrix();
+  camera.position.set(0,1.5,Math.max(29,30/(2*Math.tan(26*Math.PI/180)*asp)));
+}
+fit(); addEventListener('resize',fit);
+
+// ---------- Thiên hà: sao kim cương + tinh vân (nền) ----------
+const galaxy=new THREE.Group(); scene.add(galaxy);
+const uTint={value:act.primary};
+const starMat=new THREE.ShaderMaterial({
+ uniforms:{uTime:{value:0},uTint},
+ vertexShader:`attribute float aSize;attribute float aSpeed;attribute float aPhase;attribute float aAngle;uniform float uTime;varying vec3 vColor;varying float vTw;varying float vAngle;
+ void main(){vColor=color;vAngle=aAngle;vec4 mv=modelViewMatrix*vec4(position,1.0);vTw=sin(uTime*aSpeed+aPhase)*0.5+0.5;gl_PointSize=aSize*(0.75+0.5*vTw)*(450.0/-mv.z);gl_Position=projectionMatrix*mv;}`,
+ fragmentShader:`uniform vec3 uTint;varying vec3 vColor;varying float vTw;varying float vAngle;
+ void main(){vec2 uv=gl_PointCoord-vec2(0.5);float c=cos(vAngle),s=sin(vAngle);uv=mat2(c,-s,s,c)*uv;
+ float body=pow(max(0.0,1.0-(abs(uv.x)+abs(uv.y))*2.2),1.8);
+ float sp=exp(-abs(uv.y)*22.0)*exp(-abs(uv.x)*3.2)+exp(-abs(uv.x)*22.0)*exp(-abs(uv.y)*3.2);
+ float core=0.025/(length(uv)+0.02);float I=body*0.95+sp*0.85+core*0.6;if(I<0.04)discard;
+ vec3 col=mix(vColor,uTint,0.3)*(1.1+0.8*vTw)+vec3(0.9)*pow(core*0.5,2.0);gl_FragColor=vec4(col,clamp(I,0.0,1.0));}`,
+ transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,vertexColors:true});
+const pal=[0xffffff,0x90e0ef,0xffd166,0xf72585,0xb8c0ff].map(h=>new THREE.Color(h));
+function starPoints(n,r0,r1,s0,s1,whiteBias){
+  const P=new Float32Array(n*3),C=new Float32Array(n*3),S=new Float32Array(n),V=new Float32Array(n),H=new Float32Array(n),A=new Float32Array(n);
+  for(let i=0;i<n;i++){
+    const r=r0+Math.random()*(r1-r0),t=Math.random()*6.2832,p=Math.acos(2*Math.random()-1);
+    P.set([r*Math.sin(p)*Math.cos(t),r*Math.sin(p)*Math.sin(t),r*Math.cos(p)],i*3);
+    const c=(whiteBias&&Math.random()>0.4)?pal[0]:pal[Math.floor(Math.random()*5)];C.set([c.r,c.g,c.b],i*3);
+    S[i]=s0+Math.random()*(s1-s0);V[i]=1.5+Math.random()*4;H[i]=Math.random()*6.28;A[i]=(Math.random()-0.5)*0.5;
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(P,3));g.setAttribute('color',new THREE.BufferAttribute(C,3));
+  g.setAttribute('aSize',new THREE.BufferAttribute(S,1));g.setAttribute('aSpeed',new THREE.BufferAttribute(V,1));
+  g.setAttribute('aPhase',new THREE.BufferAttribute(H,1));g.setAttribute('aAngle',new THREE.BufferAttribute(A,1));
+  return new THREE.Points(g,starMat);
+}
+galaxy.add(starPoints(5000,160,860,2.5,6,false));
+galaxy.add(starPoints(300,80,400,6,12,true));
+// tinh vân đổi màu theo theme
+const NB=900,nP=new Float32Array(NB*3),nS=new Float32Array(NB);
+for(let i=0;i<NB;i++){const a=i/NB*12.566+(Math.random()-0.5)*1.5,d=80+Math.random()*260;
+ nP.set([Math.cos(a)*d+(Math.random()-0.5)*50,(Math.random()-0.5)*70,Math.sin(a)*d+(Math.random()-0.5)*50],i*3);nS[i]=20+Math.random()*30;}
+const nG=new THREE.BufferGeometry();nG.setAttribute('position',new THREE.BufferAttribute(nP,3));nG.setAttribute('aSize',new THREE.BufferAttribute(nS,1));
+const nebula=new THREE.Points(nG,new THREE.ShaderMaterial({
+ uniforms:{uC:{value:act.secondary}},
+ vertexShader:`attribute float aSize;void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=aSize*(200.0/-mv.z);gl_Position=projectionMatrix*mv;}`,
+ fragmentShader:`uniform vec3 uC;void main(){float d=length(gl_PointCoord-vec2(0.5));if(d>0.5)discard;gl_FragColor=vec4(uC*0.55,0.2*pow(1.0-d*2.0,2.5));}`,
+ transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+galaxy.add(nebula);
+
+// ---------- Sao băng pha lê (bay phía sau trái tim) ----------
+class Meteor{
+  constructor(){
+    this.alive=false;this.len=26+Math.random()*18;this.speed=150+Math.random()*90;
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
+    g.setAttribute('color',new THREE.BufferAttribute(new Float32Array([1,1,1,1,1,1]),3));
+    this.mat=new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending});
+    this.line=new THREE.Line(g,this.mat);this.line.visible=false;this.line.frustumCulled=false;scene.add(this.line);
+    const h=new THREE.BufferGeometry();h.setAttribute('position',new THREE.BufferAttribute(new Float32Array(3),3));
+    h.setAttribute('color',new THREE.BufferAttribute(new Float32Array([1,1,1]),3));
+    h.setAttribute('aSize',new THREE.BufferAttribute(new Float32Array([16]),1));h.setAttribute('aSpeed',new THREE.BufferAttribute(new Float32Array([1]),1));
+    h.setAttribute('aPhase',new THREE.BufferAttribute(new Float32Array([0]),1));h.setAttribute('aAngle',new THREE.BufferAttribute(new Float32Array([0]),1));
+    this.head=new THREE.Points(h,starMat);this.head.visible=false;this.head.frustumCulled=false;scene.add(this.head);
+    this.pos=new THREE.Vector3();this.dir=new THREE.Vector3();this.tail=new THREE.Vector3();
+  }
+  spawn(){
+    this.pos.set((Math.random()-0.5)*220,45+Math.random()*70,-150+Math.random()*130);
+    this.dir.set(-0.8+Math.random()*0.4,-0.55-Math.random()*0.35,(Math.random()-0.5)*0.5).normalize();
+    const c=act.primary,a=this.line.geometry.attributes.color.array;a.set([1,1,1,c.r,c.g,c.b]);this.line.geometry.attributes.color.needsUpdate=true;
+    this.life=1;this.alive=true;this.line.visible=this.head.visible=true;
+  }
+  update(dt){
+    if(!this.alive)return;
+    this.pos.addScaledVector(this.dir,this.speed*dt);this.tail.copy(this.pos).addScaledVector(this.dir,-this.len);
+    const p=this.line.geometry.attributes.position;p.array.set([this.pos.x,this.pos.y,this.pos.z,this.tail.x,this.tail.y,this.tail.z]);p.needsUpdate=true;
+    this.head.position.copy(this.pos);this.life-=dt*0.9;this.mat.opacity=Math.max(0,this.life);
+    if(this.life<=0||this.pos.y<-160){this.alive=false;this.line.visible=this.head.visible=false;}
+  }
+}
+const meteors=Array.from({length:8},()=>new Meteor());let mT=0,mD=0.8;
+
+// ---------- Trái tim hồ điệp 3D ----------
+const main=new THREE.Group();scene.add(main);
+function heartPt(u,v,sc){
+  const x=16*Math.pow(Math.sin(u),3),y=13*Math.cos(u)-5*Math.cos(2*u)-2*Math.cos(3*u)-Math.cos(4*u);
+  const zp=Math.sqrt(Math.max(0,1-v*v)),z=v*6.5*(0.35+0.65*Math.sin(u)*Math.sin(u));
+  return new THREE.Vector3(x*sc*(0.82+0.18*zp),(y+1.8)*sc*(0.82+0.18*zp),z*sc);
+}
+function wingGeo(){
+  const pos=[],uvs=[],idx=[],sx=12,sy=16;
+  for(let side=-1;side<=1;side+=2){
+    const b=pos.length/3;
+    for(let ix=0;ix<=sx;ix++){const tx=ix/sx;
+      for(let iy=0;iy<=sy;iy++){const ty=iy/sy*2-1;
+        const fw=Math.exp(-Math.pow((ty-0.38)/0.58,2))*1.15,hw=Math.exp(-Math.pow((ty+0.45)/0.48,2))*0.82,span=fw+hw;
+        pos.push(side*tx*span,ty*(0.35+0.75*Math.sin(tx*Math.PI*0.78))+(ty>0?tx*0.28:-tx*0.18),Math.sin(tx*Math.PI)*0.08);
+        uvs.push(side*tx,ty);}}
+    for(let ix=0;ix<sx;ix++)for(let iy=0;iy<sy;iy++){
+      const a=b+ix*(sy+1)+iy,bb=b+(ix+1)*(sy+1)+iy,c=b+(ix+1)*(sy+1)+iy+1,d=b+ix*(sy+1)+iy+1;idx.push(a,bb,d,bb,c,d);}
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));g.setIndex(idx);g.computeVertexNormals();return g;
+}
+const N=1000,NH=740,bg=wingGeo();
+const aHome=new Float32Array(N*3),aSwirl=new Float32Array(N*3),aPh=new Float32Array(N),aSc=new Float32Array(N),aRole=new Float32Array(N);
+for(let i=0;i<N;i++){
+  const k=i*3,isH=i<NH;aRole[i]=isH?1:0;
+  if(isH){const u=i/NH*6.2832+(Math.random()-0.5)*0.15,v=(Math.random()*2-1)*0.88,p=heartPt(u,v,0.62);
+    aHome.set([p.x+(Math.random()-0.5)*0.45,p.y+(Math.random()-0.5)*0.45,p.z+(Math.random()-0.5)*0.45],k);aSc[i]=0.28+Math.random()*0.36;}
+  else{const a=Math.random()*6.2832,r=9+Math.random()*11;aHome.set([Math.cos(a)*r,(Math.random()-0.5)*18,Math.sin(a)*r],k);aSc[i]=0.22+Math.random()*0.42;}
+  const sa=Math.random()*12.566,sr=4+Math.random()*18;aSwirl.set([Math.cos(sa)*sr,(Math.random()-0.5)*24,Math.sin(sa)*sr],k);
+  aPh[i]=Math.random()*6.2832;
+}
+[['aHomePos',aHome,3],['aSwirlPos',aSwirl,3],['aPhase',aPh,1],['aScale',aSc,1],['aRole',aRole,1]].forEach(([n,a,s])=>bg.setAttribute(n,new THREE.InstancedBufferAttribute(a,s)));
+const bu={uTime:{value:0},uBeat:{value:0},uVortex:{value:0},uShockwave:{value:-10},uMouse3D:{value:new THREE.Vector3()},uColorPrimary:{value:act.primary},uColorSecondary:{value:act.secondary},uColorAccent:{value:act.accent}};
+const bMat=new THREE.ShaderMaterial({uniforms:bu,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
+ vertexShader:`attribute vec3 aHomePos;attribute vec3 aSwirlPos;attribute float aPhase;attribute float aScale;attribute float aRole;
+ uniform float uTime;uniform float uBeat;uniform float uVortex;uniform float uShockwave;uniform vec3 uMouse3D;
+ varying vec2 vUv;varying float vGlow;
+ mat3 rY(float a){float s=sin(a),c=cos(a);return mat3(c,0.,-s,0.,1.,0.,s,0.,c);}
+ mat3 rX(float a){float s=sin(a),c=cos(a);return mat3(1.,0.,0.,0.,c,-s,0.,s,c);}
+ void main(){vUv=uv;
+  float fa=sin(uTime*mix(9.0,14.0,uVortex)+aPhase*6.0)*0.95;float bend=abs(uv.x)*fa;
+  vec3 lp=position;lp.x=sign(uv.x)*abs(position.x)*cos(bend);lp.z+=abs(position.x)*sin(bend);
+  lp*=aScale*(1.0+uBeat*0.14*aRole);
+  vec3 hp=aHomePos*(1.0+uBeat*0.075);hp.x+=sin(uTime*1.8+aPhase)*0.22;hp.y+=cos(uTime*2.1+aPhase*1.3)*0.22;hp.z+=sin(uTime*1.5+aPhase*2.0)*0.22;
+  vec3 op=rY(uTime*0.35+aPhase*0.2)*aHomePos;op.y+=sin(uTime*1.2+aPhase)*1.5;
+  vec3 bw=mix(op,hp,aRole);
+  vec3 sw=rY(uTime*2.6+aPhase)*aSwirlPos;sw.y+=sin(uTime*2.0+aPhase)*2.5;
+  vec3 c=mix(bw,sw,uVortex);
+  vec3 tm=c-uMouse3D;float md=length(tm);if(md<5.5){c+=normalize(tm+vec3(0.001))*pow(1.0-md/5.5,2.0)*2.2;}
+  float wave=exp(-pow((length(c)-uShockwave)*0.45,2.0));c+=normalize(c+vec3(0.001))*wave*1.35;vGlow=wave;
+  vec3 fp=c+rY(aPhase+uTime*(0.25+uVortex*2.0))*rX(0.35+sin(uTime*2.0+aPhase)*0.25)*lp;
+  gl_Position=projectionMatrix*modelViewMatrix*vec4(fp,1.0);}`,
+ fragmentShader:`uniform vec3 uColorPrimary;uniform vec3 uColorSecondary;uniform vec3 uColorAccent;varying vec2 vUv;varying float vGlow;
+ void main(){float wx=abs(vUv.x),wy=vUv.y;float ang=atan(wy,wx+0.05);
+  float vein=smoothstep(0.18,0.0,abs(sin(ang*14.0+wx*4.0)))*(1.0-wx*0.5);
+  float edge=smoothstep(0.65,0.98,wx);float pearl=smoothstep(0.12,0.0,abs(wx-0.88))*step(0.5,sin(ang*22.0));
+  vec3 col=mix(uColorSecondary,uColorPrimary,smoothstep(0.0,0.75,wx));col=mix(col,uColorAccent,vein*0.75+pearl*0.9+vGlow);
+  col+=uColorAccent*smoothstep(0.08,0.0,wx)*smoothstep(0.7,0.0,abs(wy))*1.4;
+  gl_FragColor=vec4(col,(1.0-smoothstep(0.88,1.0,wx))*(0.72+0.28*vein+edge*0.25));}`});
+main.add(new THREE.InstancedMesh(bg,bMat,N));
+
+// lõi trái tim ánh sáng
+const cg=new THREE.SphereGeometry(1,48,48),cp=cg.attributes.position,vv=new THREE.Vector3();
+for(let i=0;i<cp.count;i++){vv.fromBufferAttribute(cp,i);cp.setXYZ(i,vv.x*3.2,vv.y*3.2+Math.sqrt(Math.abs(vv.x)+0.01)*1.35-0.6,vv.z*2.1*(1-0.25*Math.abs(vv.y)));}
+cg.computeVertexNormals();
+const cu={uTime:{value:0},uBeat:{value:0},uColorCore:{value:act.core},uColorAccent:{value:act.accent}};
+const core=new THREE.Mesh(cg,new THREE.ShaderMaterial({uniforms:cu,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+ vertexShader:`uniform float uTime;uniform float uBeat;varying vec3 vN;varying vec3 vV;void main(){vN=normalize(normalMatrix*normal);float p=1.0+uBeat*0.16+sin(position.y*2.5+uTime*3.0)*0.04;vec4 mv=modelViewMatrix*vec4(position*p,1.0);vV=-mv.xyz;gl_Position=projectionMatrix*mv;}`,
+ fragmentShader:`uniform vec3 uColorCore;uniform vec3 uColorAccent;varying vec3 vN;varying vec3 vV;void main(){float f=pow(1.0-abs(dot(normalize(vN),normalize(vV))),2.2);gl_FragColor=vec4(mix(uColorCore*0.4,uColorAccent,f),f*0.68);}`}));
+core.position.y=0.5;main.add(core);
+
+// vòng cổ ngữ thiên văn
+const astro=new THREE.Group();main.add(astro);const ringMats=[];
+[{r:11.2,t:0.035,n:72,s:[0.18,0.24,0.05]},{r:13,t:0.028,n:96,s:[-0.14,0.12,0.22]},{r:14.8,t:0.022,n:120,s:[0.08,-0.2,-0.15]}].forEach((c,i)=>{
+ const h=new THREE.Group();h.userData.s=c.s;
+ const m=new THREE.MeshBasicMaterial({color:act.primary,transparent:true,opacity:0.28,blending:THREE.AdditiveBlending});ringMats.push(m);
+ h.add(new THREE.Mesh(new THREE.TorusGeometry(c.r,c.t,12,180),m));
+ const tp=[];for(let k=0;k<c.n;k++){const a=k/c.n*6.2832,l=k%6==0?0.55:k%2==0?0.3:0.15;tp.push(Math.cos(a)*(c.r-l/2),Math.sin(a)*(c.r-l/2),0,Math.cos(a)*(c.r+l/2),Math.sin(a)*(c.r+l/2),0);}
+ const tg=new THREE.BufferGeometry();tg.setAttribute('position',new THREE.Float32BufferAttribute(tp,3));
+ const tm=new THREE.LineBasicMaterial({color:act.accent,transparent:true,opacity:0.35,blending:THREE.AdditiveBlending});ringMats.push(tm);
+ h.add(new THREE.LineSegments(tg,tm));h.rotation.set(i*0.8,i*1.1,i*0.5);astro.add(h);
+});
+
+// ---------- Lời chúc + đổi màu ----------
+const card=document.getElementById('card'),wt=document.getElementById('wt'),tn=document.getElementById('tn');
+let hideT;
+function showWish(){
+  const was=card.classList.contains('show');
+  card.classList.remove('show');
+  setTimeout(()=>{
+    tn.textContent=THEMES[themeIdx].name;wt.textContent=WISHES[wishIdx%WISHES.length];
+    document.documentElement.style.setProperty('--glow','#'+THEMES[themeIdx].primary.getHexString());
+    card.classList.add('show');
+  },was?450:0);
+  clearTimeout(hideT);hideT=setTimeout(()=>card.classList.remove('show'),12000);
+}
+function switchTheme(){
+  themeIdx=(themeIdx+1)%THEMES.length;wishIdx++;
+  bu.uShockwave.value=0;showWish();
+}
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();switchTheme();}
+  else if(e.code==='KeyR')frozen=!frozen;
+});
+document.getElementById('btn').addEventListener('click',switchTheme);
+
+// ---------- Tương tác ----------
+let down=false,frozen=false,vortex=0,tRX=0,tRY=0,lastTap=0;
+const ndc=new THREE.Vector2(),ray=new THREE.Raycaster(),plane=new THREE.Plane(new THREE.Vector3(0,0,1),0);
+function ptr(x,y){
+  const nx=x/innerWidth*2-1,ny=-(y/innerHeight)*2+1;tRY=nx*0.55;tRX=-ny*0.35;
+  ndc.set(nx,ny);ray.setFromCamera(ndc,camera);ray.ray.intersectPlane(plane,bu.uMouse3D.value);
+}
+addEventListener('pointermove',e=>ptr(e.clientX,e.clientY));
+addEventListener('pointerdown',e=>{
+  if(e.target.closest('button'))return;
+  down=true;ptr(e.clientX,e.clientY);
+  const n=performance.now();if(n-lastTap<300)switchTheme();lastTap=n;
+});
+addEventListener('pointerup',()=>down=false);
+addEventListener('pointercancel',()=>down=false);
+
+// ---------- Vòng lặp ----------
+const clock=new THREE.Clock();let sim=0;
+function heartbeat(t){const c=(t*1.15)%1;return Math.exp(-Math.pow((c-0.14)/0.045,2))+0.65*Math.exp(-Math.pow((c-0.28)/0.055,2));}
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);if(!frozen)sim+=dt;
+  const th=THEMES[themeIdx],k=dt*3.2;
+  ['primary','secondary','accent','core','bg'].forEach(n=>act[n].lerp(th[n],k));
+  ringMats.forEach((m,i)=>m.color.copy(i%2===0?act.primary:act.accent));
+  vortex+=((down?1:0)-vortex)*dt*3.5;
+  const beat=heartbeat(sim)*(1-vortex*0.7);
+  if(bu.uShockwave.value>=0){bu.uShockwave.value+=dt*22;if(bu.uShockwave.value>32)bu.uShockwave.value=-10;}
+  bu.uTime.value=cu.uTime.value=sim;bu.uBeat.value=cu.uBeat.value=beat;bu.uVortex.value=vortex;
+  core.scale.setScalar(1-vortex*0.45);
+  starMat.uniforms.uTime.value=clock.elapsedTime;
+  galaxy.rotation.y+=dt*0.012;galaxy.rotation.x+=(tRX*0.25-galaxy.rotation.x)*dt*2;
+  mT+=dt;if(mT>=mD){mT=0;mD=0.7+Math.random()*2;const m=meteors.find(s=>!s.alive);if(m)m.spawn();}
+  meteors.forEach(m=>m.update(dt));
+  astro.children.forEach(h=>{const[a,b,c]=h.userData.s,m=frozen?0.08:1+vortex*2.5;h.rotation.x+=a*dt*m;h.rotation.y+=b*dt*m;h.rotation.z+=c*dt*m;});
+  if(frozen)main.rotation.y+=dt*0.55;
+  else{main.rotation.y+=(tRY+Math.sin(sim*0.35)*0.18-main.rotation.y)*dt*4;main.rotation.x+=(tRX-main.rotation.x)*dt*4;}
+  renderer.render(scene,camera);
+}
+animate();
+setTimeout(showWish,1800);
+</script>
+</body>
+</html>
