@@ -23,13 +23,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #foot{bottom:calc(env(safe-area-inset-bottom,0px) + 18px);pointer-events:auto}
 button{font:inherit;color:var(--fg);background:rgba(255,255,255,.08);border:1px solid var(--glow);border-radius:999px;padding:9px 22px;font-size:13px;letter-spacing:2px;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 0 18px -4px var(--glow)}
 #foot span{display:block;margin-top:9px;font-size:11px;letter-spacing:1.5px;opacity:.5;text-transform:uppercase}
+html,body,button{cursor:none}
+#dot{position:fixed;left:0;top:0;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--glow);box-shadow:0 0 10px 2px var(--glow),0 0 26px 6px var(--glow);pointer-events:none;z-index:50;opacity:0;transition:width .2s,height .2s,margin .2s,opacity .3s}
+#dot.on{opacity:1}
+#dot.hold{width:22px;height:22px;margin:-11px 0 0 -11px}
+#mbtn{margin-left:8px}
+#yt{position:fixed;left:-9999px;top:0;width:200px;height:200px}
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
+<div id="dot"></div>
+<div id="yt"></div>
 <div class="ui" id="head"><small>Happy Birthday · 18 / 11</small><h1>Phạm <b>Thanh Trà</b> 🎂</h1></div>
 <div class="ui" id="wish"><div id="card"><i id="tn"></i><p id="wt"></p></div></div>
-<div class="ui" id="foot"><button id="btn">✨ Đổi sắc màu · nhận lời chúc</button><span>Space / chạm đúp · giữ chuột: lốc hồ điệp · R: ngưng đọng</span></div>
+<div class="ui" id="foot"><button id="btn">✨ Đổi sắc màu · nhận lời chúc</button><button id="mbtn">🎵 Bật nhạc</button><span>Space / chạm đúp · giữ chuột: lốc hồ điệp · R: ngưng đọng · nhấn bất kỳ đâu lần đầu để phát nhạc</span></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -276,6 +284,7 @@ function animate(){
   const th=THEMES[themeIdx],k=dt*3.2;
   ['primary','secondary','accent','core','bg'].forEach(n=>act[n].lerp(th[n],k));
   ringMats.forEach((m,i)=>m.color.copy(i%2===0?act.primary:act.accent));
+  document.documentElement.style.setProperty('--glow','#'+act.primary.getHexString());
   vortex+=((down?1:0)-vortex)*dt*3.5;
   const beat=heartbeat(sim)*(1-vortex*0.7);
   if(bu.uShockwave.value>=0){bu.uShockwave.value+=dt*22;if(bu.uShockwave.value>32)bu.uShockwave.value=-10;}
@@ -290,8 +299,34 @@ function animate(){
   else{main.rotation.y+=(tRY+Math.sin(sim*0.35)*0.18-main.rotation.y)*dt*4;main.rotation.x+=(tRX-main.rotation.x)*dt*4;}
   renderer.render(scene,camera);
 }
+// ---------- Con trỏ: chấm sáng đổi màu theo sắc thái ----------
+const dot=document.getElementById('dot'),de=document.documentElement;
+function moveDot(e){dot.style.transform=`translate3d(${e.clientX}px,${e.clientY}px,0)`;dot.classList.add('on');}
+addEventListener('pointermove',moveDot);
+addEventListener('pointerdown',e=>{moveDot(e);dot.classList.add('hold');});
+addEventListener('pointerup',()=>dot.classList.remove('hold'));
+de.addEventListener('pointerleave',()=>dot.classList.remove('on'));
+
+// ---------- Nhạc nền YouTube ----------
+const VID='vtFy171lNlQ',mbtn=document.getElementById('mbtn');
+let yt,ytReady=false,wantPlay=false,started=false,musicOn=false;
+window.onYouTubeIframeAPIReady=()=>{
+  yt=new YT.Player('yt',{width:200,height:200,videoId:VID,
+    playerVars:{controls:0,loop:1,playlist:VID,playsinline:1},
+    events:{onReady:()=>{ytReady=true;yt.setVolume(70);if(wantPlay)yt.playVideo();},
+            onError:()=>{mbtn.textContent='🎵 Không phát được (mở bằng Live Server)';}}});
+};
+function setM(){mbtn.textContent=musicOn?'🎵 Tắt nhạc':'🎵 Bật nhạc';}
+function playM(){started=true;musicOn=true;wantPlay=true;if(ytReady)yt.playVideo();setM();}
+function pauseM(){musicOn=false;wantPlay=false;if(ytReady)yt.pauseVideo();setM();}
+mbtn.addEventListener('click',()=>musicOn?pauseM():playM());
+function firstGesture(e){if(started||(e.target.closest&&e.target.closest('button')))return;playM();}
+addEventListener('pointerdown',firstGesture);addEventListener('keydown',firstGesture);
+
 animate();
 setTimeout(showWish,1800);
 </script>
+<script src="https://www.youtube.com/iframe_api"></script>
+
 </body>
 </html>
